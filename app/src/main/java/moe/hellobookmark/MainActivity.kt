@@ -8,6 +8,7 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.StateListDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.os.SystemClock
@@ -21,6 +22,7 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.ScrollView
 import android.widget.Space
 import android.widget.TextView
 import android.widget.Toast
@@ -51,6 +53,7 @@ class MainActivity : Activity() {
 
     private var activeDialog: AlertDialog? = null
     private var lastOpenMs = 0L
+    private var lastWindowH = 0
 
     private data class Bookmark(val name: String, val url: String)
 
@@ -65,6 +68,9 @@ class MainActivity : Activity() {
         private const val COLS = 5
         private const val ROWS = 5
         private const val MAX_BOOKMARKS = COLS * ROWS
+
+        // 搜索框上方留白占窗口高度的比例（弹性，小屏自动收缩不占空）
+        private const val UPPER_RATIO = 0.20f
 
         // 允许原样放行的协议：http/https 网页，以及浏览器内置协议页（edge://flags、chrome://、about: 等）。
         // 其余协议（intent://、javascript:、file: 等）一律加 https:// 前缀中和，阻断非网页协议。
@@ -92,16 +98,26 @@ class MainActivity : Activity() {
     // ------------------------------------------------------------------ UI 构建
 
     private fun buildUi() {
+        // 外层滚动容器：窗口高度不足（小屏、输入法弹出）时整体可上下滚动
+        val rootScroll = ScrollView(this).apply {
+            isFillViewport = true
+            isVerticalScrollBarEnabled = false
+        }
+        setContentView(rootScroll)
+
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(12), dp(18), dp(12), dp(14))
         }
-        setContentView(root)
+        rootScroll.addView(root, ScrollView.LayoutParams(
+            ScrollView.LayoutParams.MATCH_PARENT, ScrollView.LayoutParams.WRAP_CONTENT
+        ))
 
-        // 固定留白：搜索框位于主界面上半部分略靠下的位置。
-        // 使用固定高度而非权重，保证其位置不随书签图标数量变化。
-        root.addView(Space(this), LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, dp(180)
+        // 搜索框上方留白：按窗口高度比例弹性调整（小屏自动收缩不占空）。
+        // 高度只取决于窗口大小，不随图标数量变动；窗口尺寸变化（如输入法弹出）时自动重算。
+        val upperSpacer = Space(this)
+        root.addView(upperSpacer, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, 0
         ))
 
         // ---- 搜索框 ----
@@ -186,12 +202,27 @@ class MainActivity : Activity() {
                 cv
             }
         }
+
+        // 布局完成后按窗口高度比例设置搜索框上方留白（窗口尺寸变化时自动重算）
+        rootScroll.viewTreeObserver.addOnGlobalLayoutListener {
+            val h = rootScroll.height
+            if (h > 0 && h != lastWindowH) {
+                lastWindowH = h
+                val target = (h * UPPER_RATIO).toInt().coerceIn(dp(8), dp(220))
+                val lp = upperSpacer.layoutParams
+                if (lp.height != target) {
+                    lp.height = target
+                    upperSpacer.layoutParams = lp
+                }
+            }
+        }
     }
 
     private fun createCell(): CellViews {
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
+            background = pressBackground() // 点击/长按的灰色按压反馈
         }
         val char = TextView(this).apply {
             textSize = 30f
@@ -434,6 +465,17 @@ class MainActivity : Activity() {
             setColor(color)
             cornerRadius = radius.toFloat()
         }
+
+    /** 图标按压反馈：按下/长按时显示灰色圆角底色，其余时间透明 */
+    private fun pressBackground(): StateListDrawable {
+        val pressed = GradientDrawable().apply {
+            setColor(getColor(R.color.press_bg))
+            cornerRadius = dp(16).toFloat()
+        }
+        return StateListDrawable().apply {
+            addState(intArrayOf(android.R.attr.state_pressed), pressed)
+        }
+    }
 
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
 }

@@ -24,6 +24,7 @@ APK 名为 `hellobookmark-{versionName}-release.apk`。
 
 | 版本 | 说明 |
 |------|------|
+| 1.5  | 布局优化：搜索框上方留白改为按窗口高度 20% 弹性调整（小屏自动收缩）；外层 ScrollView 支持小屏/输入法弹出时整体上移与上下滚动；图标点击/长按增加灰色圆角按压反馈 |
 | 1.4  | 强制竖屏；搜索框下移至主界面上半部分略靠下（固定位置，不随图标数量变动）；MIT 开源 |
 | 1.3  | 支持浏览器内置协议页：edge://、chrome://、about:、brave:// 等原样放行；危险协议（intent:///javascript:/file: 等）仍阻断 |
 | 1.2  | 安全加固（1.1 基础上通过 lint）：URL scheme 显式白名单、大写 scheme 兼容、搜索图标可点击、双击防抖、输入长度限制、旋转/深色切换恢复搜索内容、对话框防泄漏、备份规则限定仅书签数据、windowLightNavigationBar 移至 API 27+ 限定（兼容 Android 8.0）、CI 无签名密钥时拒绝发布、CI 增加 lint |
