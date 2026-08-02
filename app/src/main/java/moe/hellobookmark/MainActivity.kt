@@ -65,6 +65,13 @@ class MainActivity : Activity() {
         private const val COLS = 5
         private const val ROWS = 5
         private const val MAX_BOOKMARKS = COLS * ROWS
+
+        // 允许原样放行的协议：http/https 网页，以及浏览器内置协议页（edge://flags、chrome://、about: 等）。
+        // 其余协议（intent://、javascript:、file: 等）一律加 https:// 前缀中和，阻断非网页协议。
+        private val PASSTHROUGH_SCHEMES = setOf(
+            "http", "https",
+            "about", "chrome", "edge", "brave", "vivaldi", "opera", "moz", "firefox", "view-source"
+        )
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -312,11 +319,17 @@ class MainActivity : Activity() {
     private fun openUrl(raw: String) {
         val trimmed = raw.trim()
         if (trimmed.isEmpty()) return
-        // 显式 scheme 白名单：仅 http/https 原样放行；其余一律加 https:// 前缀，
-        // 阻断 intent://、javascript:、file:、自定义 scheme 等非网页协议
-        // （Uri.parse 会把 scheme 规范化为小写，因此 HTTP:// 也能被正确识别）
+        // 协议策略：
+        //  - 无协议（example.com）→ 自动补 https://
+        //  - http/https 与浏览器内置协议（edge://flags、chrome:// 等）→ 原样放行
+        //  - 其余（intent://、javascript:、file: 等）→ 加 https:// 前缀中和，避免 URL 被解析成其他协议
+        // Uri.parse 会把 scheme 规范化为小写，因此 HTTP:// 也能被正确识别
         val scheme = Uri.parse(trimmed).scheme
-        val url = if (scheme == "http" || scheme == "https") trimmed else "https://$trimmed"
+        val url = when {
+            scheme == null -> "https://$trimmed"
+            scheme in PASSTHROUGH_SCHEMES -> trimmed
+            else -> "https://$trimmed"
+        }
         try {
             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
         } catch (e: ActivityNotFoundException) {

@@ -5,7 +5,7 @@
     <string name="add_bookmark">添加书签</string>
     <string name="edit_bookmark">编辑书签</string>
     <string name="hint_name">书签名称</string>
-    <string name="hint_url">网址，例如 https://example.com</string>
+    <string name="hint_url">网址，例如 https://example.com（支持 edge://、chrome:// 等内置页）</string>
     <string name="save">保存</string>
     <string name="delete">删除</string>
     <string name="cancel">取消</string>
