@@ -460,7 +460,9 @@ class MainActivity : Activity() {
     private fun firstChar(s: String): String {
         val t = s.trim()
         if (t.isEmpty()) return "?"
-        return String(Character.toChars(t.codePointAt(0)))
+        val cp = t.codePointAt(0)
+        // 孤立代理项（畸形文本）直接返回占位符，避免 Character.toChars 抛异常
+        return if (Character.isValidCodePoint(cp)) String(Character.toChars(cp)) else "?"
     }
 
     private fun rounded(color: Int, radius: Int): GradientDrawable =

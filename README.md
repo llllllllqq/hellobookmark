@@ -18,12 +18,13 @@ GitHub Actions 云编译（`.github/workflows/build-release.yml`）：push 到 `
 APK 名为 `hellobookmark-{versionName}-release.apk`。
 
 本地无需安装 Gradle / Android SDK，纯云端编译。签名：CI 从仓库 secrets 恢复签名密钥；
-未配置 secrets 时回退到 debug 签名。
+缺少 secrets 时构建直接失败，不会发布未签名/debug 签名产物（本地开发可用 debug 签名构建）。
 
 ## 版本历史
 
 | 版本 | 说明 |
 |------|------|
+| 1.8  | 投产前检测修复：firstChar 遇孤立代理项不再崩溃（返回占位符）；README 签名说明与 CI 实际行为对齐 |
 | 1.7  | 打开浏览器后自动退出应用（返回键不再回到本应用）；从最近任务列表隐藏（excludeFromRecents） |
 | 1.6  | 布局优化：搜索框上方留白改为按窗口高度 20% 弹性调整（小屏自动收缩）；外层 ScrollView 支持小屏/输入法弹出时整体上移与上下滚动；图标点击/长按增加灰色圆角按压反馈 |
 | 1.4  | 强制竖屏；搜索框下移至主界面上半部分略靠下（固定位置，不随图标数量变动）；MIT 开源 |
