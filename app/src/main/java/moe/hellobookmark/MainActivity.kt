@@ -159,7 +159,7 @@ class MainActivity : Activity() {
         }
         root.addView(gridContainer)
 
-        cells = Array(ROWS) { row ->
+        cells = Array(ROWS) { _ ->
             val rowLay = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
                 layoutParams = LinearLayout.LayoutParams(
@@ -167,7 +167,7 @@ class MainActivity : Activity() {
                 )
             }
             gridContainer.addView(rowLay)
-            Array(COLS) { col ->
+            Array(COLS) { _ ->
                 val cv = createCell()
                 rowLay.addView(cv.root, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f))
                 cv
