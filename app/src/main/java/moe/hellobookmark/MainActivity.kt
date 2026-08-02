@@ -370,6 +370,8 @@ class MainActivity : Activity() {
         }
         try {
             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+            // 打开成功后立即退出本应用：浏览器按返回键不会回到 hellobookmark
+            finish()
         } catch (e: ActivityNotFoundException) {
             Toast.makeText(this, R.string.no_browser, Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
