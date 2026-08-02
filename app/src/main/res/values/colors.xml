@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 浅色模式 -->
+    <color name="bg">#F5F6F8</color>
+    <color name="search_bg">#E4E7EB</color>
+    <color name="icon_color">#1D1D1F</color>
+    <color name="label_color">#5F6368</color>
+    <color name="hint_color">#9AA0A6</color>
+    <color name="accent">#1A73E8</color>
+    <!-- 启动图标背景色（品牌色，深浅色模式保持一致） -->
+    <color name="ic_launcher_background">#1A73E8</color>
+</resources>

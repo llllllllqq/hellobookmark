@@ -1,0 +1,73 @@
+name: Build Release APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Restore signing key from secrets
+        run: |
+          if [ -n "${{ secrets.ANDROID_KEYSTORE_B64 }}" ]; then
+            echo "${{ secrets.ANDROID_KEYSTORE_B64 }}" | base64 -d > "$RUNNER_TEMP/hellobookmark-release.jks"
+            echo "KEYSTORE_FILE=$RUNNER_TEMP/hellobookmark-release.jks" >> "$GITHUB_ENV"
+            echo "KEYSTORE_PASSWORD=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" >> "$GITHUB_ENV"
+            echo "KEY_ALIAS=${{ secrets.ANDROID_KEY_ALIAS }}" >> "$GITHUB_ENV"
+            echo "KEY_PASSWORD=${{ secrets.ANDROID_KEY_PASSWORD }}" >> "$GITHUB_ENV"
+            echo "signing=release-key"
+          else
+            echo "signing=debug-key (no secrets)"
+          fi
+
+      - name: Set up Gradle 8.10.2
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+
+      - name: Build release APK
+        run: gradle assembleRelease --no-daemon
+
+      - name: Inspect APK
+        run: |
+          AAPT=$(ls "$ANDROID_HOME"/build-tools/*/aapt 2>/dev/null | tail -1)
+          "$AAPT" dump badging app/build/outputs/apk/release/app-release.apk \
+            | grep -E "^package:|^application-label:|launchable-activity" || true
+          ls -la app/build/outputs/apk/release/
+
+      - name: Read version
+        id: ver
+        run: |
+          VER=$(sed -n 's/.*versionName = "\([^"]*\)".*/\1/p' app/build.gradle.kts | head -1)
+          echo "version=$VER" >> "$GITHUB_OUTPUT"
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VER="${{ steps.ver.outputs.version }}"
+          TAG="v$VER"
+          cp app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/hellobookmark-$VER-release.apk"
+          gh release delete "$TAG" --yes --cleanup-tag 2>/dev/null || true
+          NOTES="HelloBookmark v$VER release build. Commit: ${{ github.sha }}"
+          gh release create "$TAG" "$RUNNER_TEMP/hellobookmark-$VER-release.apk" \
+            --title "HelloBookmark v$VER" \
+            --notes "$NOTES" \
+            --target "${{ github.sha }}"

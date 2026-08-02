@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 深色模式 -->
+    <color name="bg">#111214</color>
+    <color name="search_bg">#2A2D31</color>
+    <color name="icon_color">#F1F3F4</color>
+    <color name="label_color">#9AA0A6</color>
+    <color name="hint_color">#8E9399</color>
+    <color name="accent">#8AB4F8</color>
+</resources>

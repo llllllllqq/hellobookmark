@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">网页书签</string>
+    <string name="search_hint">输入关键词搜索</string>
+    <string name="add_bookmark">添加书签</string>
+    <string name="edit_bookmark">编辑书签</string>
+    <string name="hint_name">书签名称</string>
+    <string name="hint_url">网址，例如 https://example.com</string>
+    <string name="save">保存</string>
+    <string name="delete">删除</string>
+    <string name="cancel">取消</string>
+    <string name="fill_all">名称和网址都不能为空</string>
+    <string name="cannot_open">无法打开该网址</string>
+    <string name="search_empty">请输入搜索关键词</string>
+    <string name="engine_baidu">已切换到百度搜索</string>
+    <string name="engine_google">已切换到谷歌搜索</string>
+    <string name="add_label">添加</string>
+</resources>
