@@ -98,7 +98,13 @@ class MainActivity : Activity() {
         }
         setContentView(root)
 
-        // ---- 搜索框（上半部分）----
+        // 固定留白：搜索框位于主界面上半部分略靠下的位置。
+        // 使用固定高度而非权重，保证其位置不随书签图标数量变化。
+        root.addView(Space(this), LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, dp(180)
+        ))
+
+        // ---- 搜索框 ----
         val searchBar = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
