@@ -24,6 +24,7 @@ APK 名为 `hellobookmark-{versionName}-release.apk`。
 
 | 版本 | 说明 |
 |------|------|
+| 1.1  | 安全加固：URL scheme 显式白名单（阻断 intent:///javascript:/file: 等）、大写 scheme 兼容、搜索图标可点击、双击防抖、输入长度限制、旋转/深色切换恢复搜索内容、对话框防泄漏、备份规则限定仅书签数据、CI 无签名密钥时拒绝发布、CI 增加 lint |
 | 1.0  | 首个版本：搜索 + 引擎切换 + 5×5 书签网格 + 深色模式 |
 
 ## 签名密钥

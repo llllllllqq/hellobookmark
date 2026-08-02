@@ -11,6 +11,8 @@
     <string name="cancel">取消</string>
     <string name="fill_all">名称和网址都不能为空</string>
     <string name="cannot_open">无法打开该网址</string>
+    <string name="no_browser">未找到可用的浏览器</string>
+    <string name="search_icon_desc">搜索</string>
     <string name="search_empty">请输入搜索关键词</string>
     <string name="engine_baidu">已切换到百度搜索</string>
     <string name="engine_google">已切换到谷歌搜索</string>

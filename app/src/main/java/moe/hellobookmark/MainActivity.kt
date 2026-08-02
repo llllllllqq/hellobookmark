@@ -2,6 +2,7 @@ package moe.hellobookmark
 
 import android.app.Activity
 import android.app.AlertDialog
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
@@ -9,6 +10,8 @@ import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Bundle
+import android.os.SystemClock
+import android.text.InputFilter
 import android.text.InputType
 import android.text.TextUtils
 import android.view.Gravity
@@ -46,6 +49,9 @@ class MainActivity : Activity() {
     private lateinit var gridContainer: LinearLayout
     private lateinit var cells: Array<Array<CellViews>>
 
+    private var activeDialog: AlertDialog? = null
+    private var lastOpenMs = 0L
+
     private data class Bookmark(val name: String, val url: String)
 
     private class CellViews(val root: LinearLayout, val char: TextView, val label: TextView)
@@ -68,6 +74,12 @@ class MainActivity : Activity() {
         engine = prefs.getString(KEY_ENGINE, ENGINE_BAIDU) ?: ENGINE_BAIDU
         buildUi()
         renderGrid()
+    }
+
+    override fun onDestroy() {
+        // 旋转/深色切换导致 Activity 销毁时，主动关闭可能正显示的书签对话框，避免 WindowLeaked
+        activeDialog?.takeIf { it.isShowing }?.dismiss()
+        super.onDestroy()
     }
 
     // ------------------------------------------------------------------ UI 构建
@@ -103,6 +115,7 @@ class MainActivity : Activity() {
 
         // 输入框：只负责打字，无联想
         searchEdit = EditText(this).apply {
+            id = R.id.search_edit // 固定 ID：旋转/深色切换重建时自动恢复已输入内容
             setTextColor(getColor(R.color.icon_color))
             setHintTextColor(getColor(R.color.hint_color))
             hint = getString(R.string.search_hint)
@@ -110,6 +123,7 @@ class MainActivity : Activity() {
             setSingleLine(true)
             imeOptions = EditorInfo.IME_ACTION_SEARCH
             inputType = InputType.TYPE_CLASS_TEXT
+            filters = arrayOf(InputFilter.LengthFilter(500))
             setOnEditorActionListener { _, actionId, _ ->
                 if (actionId == EditorInfo.IME_ACTION_SEARCH || actionId == EditorInfo.IME_ACTION_DONE) {
                     doSearch()
@@ -121,13 +135,15 @@ class MainActivity : Activity() {
         }
         searchBar.addView(searchEdit, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f))
 
-        // 右侧搜索图标
+        // 右侧搜索图标：点击即搜索
         val searchIcon = ImageView(this).apply {
             setImageResource(R.drawable.ic_search)
             setColorFilter(getColor(R.color.label_color))
             val lp = LinearLayout.LayoutParams(dp(20), dp(20))
             lp.setMargins(0, 0, dp(14), 0)
             layoutParams = lp
+            contentDescription = getString(R.string.search_icon_desc)
+            setOnClickListener { doSearch() }
         }
         searchBar.addView(searchIcon)
 
@@ -284,17 +300,27 @@ class MainActivity : Activity() {
         searchEdit.clearFocus()
     }
 
-    private fun openBookmark(b: Bookmark) = openUrl(b.url)
+    private fun openBookmark(b: Bookmark) {
+        // 300ms 防抖，避免快速双击重复打开浏览器
+        val now = SystemClock.elapsedRealtime()
+        if (now - lastOpenMs < 300L) return
+        lastOpenMs = now
+        openUrl(b.url)
+    }
 
     /** 用系统默认浏览器打开网址（本应用不联网，相当于点击网页中的蓝色链接）。 */
     private fun openUrl(raw: String) {
-        var url = raw.trim()
-        if (url.isEmpty()) return
-        if (!url.startsWith("http://") && !url.startsWith("https://") && !url.startsWith("file://")) {
-            url = "https://$url"
-        }
+        val trimmed = raw.trim()
+        if (trimmed.isEmpty()) return
+        // 显式 scheme 白名单：仅 http/https 原样放行；其余一律加 https:// 前缀，
+        // 阻断 intent://、javascript:、file:、自定义 scheme 等非网页协议
+        // （Uri.parse 会把 scheme 规范化为小写，因此 HTTP:// 也能被正确识别）
+        val scheme = Uri.parse(trimmed).scheme
+        val url = if (scheme == "http" || scheme == "https") trimmed else "https://$trimmed"
         try {
             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        } catch (e: ActivityNotFoundException) {
+            Toast.makeText(this, R.string.no_browser, Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             Toast.makeText(this, R.string.cannot_open, Toast.LENGTH_SHORT).show()
         }
@@ -311,6 +337,7 @@ class MainActivity : Activity() {
             hint = getString(R.string.hint_name)
             setSingleLine(true)
             inputType = InputType.TYPE_CLASS_TEXT
+            filters = arrayOf(InputFilter.LengthFilter(50))
             setTextColor(getColor(R.color.icon_color))
             setHintTextColor(getColor(R.color.hint_color))
             if (isEdit) setText(bookmarks[idx!!].name)
@@ -319,6 +346,7 @@ class MainActivity : Activity() {
             hint = getString(R.string.hint_url)
             setSingleLine(true)
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
+            filters = arrayOf(InputFilter.LengthFilter(2048))
             setTextColor(getColor(R.color.icon_color))
             setHintTextColor(getColor(R.color.hint_color))
             if (isEdit) setText(bookmarks[idx!!].url)
@@ -344,6 +372,7 @@ class MainActivity : Activity() {
             builder.setNegativeButton(getString(R.string.delete), null)
         }
         val dialog = builder.create()
+        activeDialog = dialog
         dialog.setOnShowListener {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
                 val name = nameInput.text.toString().trim()

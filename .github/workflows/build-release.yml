@@ -32,9 +32,9 @@ jobs:
             echo "KEYSTORE_PASSWORD=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" >> "$GITHUB_ENV"
             echo "KEY_ALIAS=${{ secrets.ANDROID_KEY_ALIAS }}" >> "$GITHUB_ENV"
             echo "KEY_PASSWORD=${{ secrets.ANDROID_KEY_PASSWORD }}" >> "$GITHUB_ENV"
-            echo "signing=release-key"
           else
-            echo "signing=debug-key (no secrets)"
+            echo "::error::缺少签名 secrets（ANDROID_KEYSTORE_B64 等），拒绝发布未签名/debug 签名产物"
+            exit 1
           fi
 
       - name: Set up Gradle 8.10.2
@@ -42,8 +42,8 @@ jobs:
         with:
           gradle-version: '8.10.2'
 
-      - name: Build release APK
-        run: gradle assembleRelease --no-daemon
+      - name: Build release APK (含 lint 检查)
+        run: gradle lintRelease assembleRelease --no-daemon
 
       - name: Inspect APK
         run: |
